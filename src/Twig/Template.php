@@ -112,8 +112,14 @@ abstract class Template extends Twig_Template
         $isDefinedTest = false,
         $ignoreStrictCheck = false
     ) {
-        // We need to handle accessing attributes on an Eloquent instance differently
-        if (Twig_Template::METHOD_CALL !== $type and is_a($object, 'Illuminate\Database\Eloquent\Model')) {
+        // We need to handle accessing attributes on an Eloquent/Collection instances differently
+        $laravelBypassObject = $object instanceof Model || $object instanceof Collection;
+
+        if (Twig_Template::METHOD_CALL === $type || ! $laravelBypassObject) {
+            return parent::getAttribute($object, $item, $arguments, $type, $isDefinedTest, $ignoreStrictCheck);
+        }
+
+        if ($laravelBypassObject) {
             // We can't easily find out if an attribute actually exists, so return true
             if ($isDefinedTest) {
                 return true;
@@ -125,8 +131,6 @@ abstract class Template extends Twig_Template
 
             // Call the attribute, the Model object does the rest of the magic
             return $object->$item;
-        } else {
-            return parent::getAttribute($object, $item, $arguments, $type, $isDefinedTest, $ignoreStrictCheck);
         }
     }
 }
